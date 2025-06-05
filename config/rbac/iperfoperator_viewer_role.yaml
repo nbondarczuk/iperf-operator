@@ -1,0 +1,23 @@
+# permissions for end users to view iperfoperators.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: iperf-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: iperfoperator-viewer-role
+rules:
+- apiGroups:
+  - operator.nbt.pl
+  resources:
+  - iperfoperators
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - operator.nbt.pl
+  resources:
+  - iperfoperators/status
+  verbs:
+  - get

@@ -1,0 +1,9 @@
+apiVersion: operator.nbt.pl/v1alpha1
+kind: IPerfOperator
+metadata:
+  labels:
+    app.kubernetes.io/name: iperf-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: iperfoperator-sample
+spec:
+  # TODO(user): Add fields here
