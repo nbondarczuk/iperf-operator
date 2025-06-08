@@ -39,23 +39,16 @@ spec:
           spec:
             description: IPerfOperatorSpec defines the desired state of IPerfOperator
             properties:
-              forceRedeploy:
-                description: ForceRedeploy is a field of IPerfOperator. It is used
-                  to trigger the experiment.
-                type: string
               port:
-                default: 5201
                 description: Port is a field of IPerfOperator. It is the port used
                   in iperf session.
-                format: int32
                 type: integer
-            required:
-            - port
             type: object
           status:
             description: IPerfOperatorStatus defines the observed state of IPerfOperator
             properties:
               conditions:
+
                 description: Conditions store the status conditions of the instances
                 items:
                   description: Condition contains details for one aspect of the current

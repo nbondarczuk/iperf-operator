@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "iperf3-server-deployment"
+  namespace: "iperf3-operator-ns"
+  labels:
+    app: "iperf3"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "iperf3"
+  template:
+    metadata:
+      labels:
+        app: "iperf3"
+    spec:
+      containers:
+        - name: "iperf3-server"
+          image: "iperf3:latest"
+          command: iperf3-server.sh
+          ports:
+            - containerPort: 5201
+              name: iperf3-server
+

@@ -25,17 +25,20 @@ import (
 
 // IPerfOperatorSpec defines the desired state of IPerfOperator
 type IPerfOperatorSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Port is a field of IPerfOperator. It is the port used in iperf session.
+	// +kubebuilder:default=5201
+	// +kubebuilder:validation:Required
+	Port int32 `json:"port,omitempty"`
 
-	// Foo is an example field of IPerfOperator. Edit iperfoperator_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// ForceReeploy is a field of IPerfOperator. It is used to trigger the experiment.
+	ForceRedeploy string `json:"forceRedeploy,omitempty"`
 }
 
 // IPerfOperatorStatus defines the observed state of IPerfOperator
 type IPerfOperatorStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Conditions store the status conditions of the instances
+	// +operator-sdk:csv:customresourcedefinitions:type=status
+	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 }
 
 // +kubebuilder:object:root=true

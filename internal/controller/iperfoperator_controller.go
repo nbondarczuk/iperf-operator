@@ -19,12 +19,15 @@ package controller
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	operatorv1alpha1 "gitgub.com/nbondarczuk/iperf-operator/api/v1alpha1"
+	"gitgub.com/nbondarczuk/iperf-operator/assets"
+	appsv1 "k8s.io/api/apps/v1"
 )
 
 // IPerfOperatorReconciler reconciles a IPerfOperator object
@@ -47,16 +50,51 @@ type IPerfOperatorReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.19.0/pkg/reconcile
 func (r *IPerfOperatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	logger := log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	// Get operator CR and skip all if not found.
+	operatorCR := &operatorv1alpha1.IPerfOperator{}
+	err := r.Get(ctx, req.NamespacedName, operatorCR)
+	if err != nil && errors.IsNotFound(err) {
+		logger.Info("Operator resource object not found.")
+		return ctrl.Result{}, nil
+	} else if err != nil {
+		logger.Error(err, "Error getting operator resource object")
+		return ctrl.Result{}, err
+	}
 
-	return ctrl.Result{}, nil
+	// Get server deplyment from manifest file.
+	deployment := &appsv1.Deployment{}
+	create := false
+	err = r.Get(ctx, req.NamespacedName, deployment)
+	if err != nil && errors.IsNotFound(err) {
+		create = true
+		deployment = assets.GetDeploymentFromFile("assets/manifests/iperf3-server-deployment.yaml")
+	} else if err != nil {
+		logger.Error(err, "Error getting existing IPerf deployment.")
+		return ctrl.Result{}, err
+	}
+
+	// Set properties of server controller
+	deployment.Namespace = req.Namespace
+	deployment.Name = req.Name
+	deployment.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort = operatorCR.Spec.Port
+
+	// Create or Update server controller
+	ctrl.SetControllerReference(operatorCR, deployment, r.Scheme)
+	if create {
+		err = r.Create(ctx, deployment)
+	} else {
+		err = r.Update(ctx, deployment)
+	}
+
+	return ctrl.Result{}, err
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *IPerfOperatorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&operatorv1alpha1.IPerfOperator{}).
+		Owns(&appsv1.Deployment{}).
 		Complete(r)
 }
