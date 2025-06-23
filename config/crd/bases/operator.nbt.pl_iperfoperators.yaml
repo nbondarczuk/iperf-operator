@@ -40,7 +40,7 @@ spec:
             description: IPerfOperatorSpec defines the desired state of IPerfOperator
             properties:
               forceRedeploy:
-                description: ForceRedeploy is a field of IPerfOperator. It is used
+                description: ForceReeploy is a field of IPerfOperator. It is used
                   to trigger the experiment.
                 type: string
               port:

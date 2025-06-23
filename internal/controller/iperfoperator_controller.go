@@ -56,37 +56,60 @@ func (r *IPerfOperatorReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	operatorCR := &operatorv1alpha1.IPerfOperator{}
 	err := r.Get(ctx, req.NamespacedName, operatorCR)
 	if err != nil && errors.IsNotFound(err) {
-		logger.Info("Operator resource object not found.")
+		logger.Info("Operator CR object not found.")
 		return ctrl.Result{}, nil
 	} else if err != nil {
-		logger.Error(err, "Error getting operator resource object")
+		logger.Error(err, "Error getting operator CR object")
 		return ctrl.Result{}, err
 	}
 
 	// Get server deplyment from manifest file.
-	deployment := &appsv1.Deployment{}
-	create := false
-	err = r.Get(ctx, req.NamespacedName, deployment)
+	serverDeployment := &appsv1.Deployment{}
+	serverCreate := false
+	err = r.Get(ctx, req.NamespacedName, serverDeployment)
 	if err != nil && errors.IsNotFound(err) {
-		create = true
-		deployment = assets.GetDeploymentFromFile("assets/manifests/iperf3-server-deployment.yaml")
+		serverCreate = true
+		serverDeployment = assets.GetDeploymentFromFile("assets/manifests/iperf3-server-deployment.yaml")
 	} else if err != nil {
-		logger.Error(err, "Error getting existing IPerf deployment.")
+		logger.Error(err, "Error getting existing IPerf server deployment manifest.")
 		return ctrl.Result{}, err
 	}
 
 	// Set properties of server controller
-	deployment.Namespace = req.Namespace
-	deployment.Name = req.Name
-	deployment.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort = operatorCR.Spec.Port
+	serverDeployment.Namespace = req.Namespace
+	serverDeployment.Name = req.Name
+	serverDeployment.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort = operatorCR.Spec.Port
 
 	// Create or Update server controller
-	ctrl.SetControllerReference(operatorCR, deployment, r.Scheme)
-	if create {
-		err = r.Create(ctx, deployment)
+	ctrl.SetControllerReference(operatorCR, serverDeployment, r.Scheme)
+	if serverCreate {
+		err = r.Create(ctx, serverDeployment)
 	} else {
-		err = r.Update(ctx, deployment)
+		err = r.Update(ctx, serverDeployment)
 	}
+
+   // Get client deplyment from manifest file.
+    clientDeployment := &appsv1.Deployment{}
+    clientCreate := false
+    err = r.Get(ctx, req.NamespacedName, clientDeployment)
+    if err != nil && errors.IsNotFound(err) {
+        clientCreate = true
+        clientDeployment = assets.GetDeploymentFromFile("assets/manifests/iperf3-client-deployment.yaml")
+    } else if err != nil {
+        logger.Error(err, "Error getting existing IPerf client deployment manifest.")
+        return ctrl.Result{}, err
+    }
+
+    // Set properties of server controller
+    clientDeployment.Namespace = req.Namespace
+	clientDeployment.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort = operatorCR.Spec.Port
+
+    // Create or Update server controller
+    if clientCreate {
+        err = r.Create(ctx, clientDeployment)
+    } else {
+        err = r.Update(ctx, clientDeployment)
+    }
 
 	return ctrl.Result{}, err
 }
